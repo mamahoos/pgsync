@@ -12,6 +12,7 @@ _pgsync() {
     esac
 
     if [[ "$cur" == -* ]]; then
+        # shellcheck disable=SC2207
         COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
     fi
 }
