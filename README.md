@@ -22,7 +22,7 @@ Messages go to **stderr**; the dump stream never touches the script’s stdout (
 From the repo root:
 
 ```bash
-./install.sh
+sudo source ./install.sh
 ```
 
 Defaults: `PREFIX=/usr/local`, binary `${PREFIX}/bin/pgsync`, completion under the first existing path among:
