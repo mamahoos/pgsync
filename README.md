@@ -20,7 +20,7 @@ docker run --rm ghcr.io/mamahoos/pgsync:latest \
   -t 'postgresql://user:pass@target:5432/dbname'
 ```
 
-Published on every version tag (`v*`) to [GHCR](https://github.com/mamahoos/pgsync/pkgs/container/pgsync). Pin a release, e.g. `ghcr.io/mamahoos/pgsync:2.0.0`.
+Published on every version tag (`v*`) to [GHCR](https://github.com/mamahoos/pgsync/pkgs/container/pgsync). Pin a release, e.g. `ghcr.io/mamahoos/pgsync:2.0.1`.
 
 Log output goes to **stderr**; stdout stays free for the dump pipe.
 
