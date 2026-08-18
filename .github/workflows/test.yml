@@ -1,0 +1,82 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: ShellCheck
+        run: |
+          shellcheck pgsync.sh install.sh completions/pgsync.bash scripts/test.sh
+          shellcheck tests/helpers/common.bash
+
+  unit:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bats
+        run: |
+          git clone --depth 1 --branch v1.11.1 https://github.com/bats-core/bats-core.git /tmp/bats-core
+          sudo /tmp/bats-core/install.sh /usr/local
+
+      - name: Unit tests
+        run: bats tests/unit
+
+  integration:
+    runs-on: ubuntu-latest
+    needs: unit
+    services:
+      source:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      target:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bats and PostgreSQL client
+        run: |
+          git clone --depth 1 --branch v1.11.1 https://github.com/bats-core/bats-core.git /tmp/bats-core
+          sudo /tmp/bats-core/install.sh /usr/local
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Integration tests
+        env:
+          PGSYNC_SOURCE_URI: postgresql://postgres:postgres@localhost:5432/app
+          PGSYNC_TARGET_URI: postgresql://postgres:postgres@localhost:5433/app
+        run: bats tests/integration
