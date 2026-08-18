@@ -1,0 +1,54 @@
+# Local demo / CI smoke test: two Postgres instances + one-shot sync.
+#
+# Smoke test:
+#   docker compose run --rm pgsync
+#
+# Custom URIs (external clusters):
+#   docker compose run --rm pgsync \
+#     -s 'postgresql://user:pass@host:5432/src' \
+#     -t 'postgresql://user:pass@host:5432/dst'
+#
+# Pull from GHCR instead of building locally:
+#   PGSYNC_IMAGE=ghcr.io/mamahoos/pgsync:latest docker compose run --rm pgsync
+
+services:
+  source:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+  target:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
+
+  pgsync:
+    image: ${PGSYNC_IMAGE:-ghcr.io/mamahoos/pgsync:latest}
+    build: .
+    depends_on:
+      source:
+        condition: service_healthy
+      target:
+        condition: service_healthy
+    command:
+      - -s
+      - postgresql://postgres:postgres@source:5432/app
+      - -t
+      - postgresql://postgres:postgres@target:5432/app
+      - -v
