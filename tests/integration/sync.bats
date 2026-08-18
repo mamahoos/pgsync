@@ -10,7 +10,7 @@ setup() {
 @test "full sync copies rows from source to target" {
     seed_source
 
-    run --separate-stderr "$PGSYNC" -q -s "$PGSYNC_SOURCE_URI" -t "$PGSYNC_TARGET_URI"
+    run --separate-stderr "$PGSYNC" -s "$PGSYNC_SOURCE_URI" -t "$PGSYNC_TARGET_URI"
     [ "$status" -eq 0 ]
     [[ "$stderr" == *"pgsync: ok"* ]]
 
@@ -68,7 +68,8 @@ setup() {
         );
     ' >/dev/null
 
-    run --separate-stderr "$PGSYNC" -q --data-only -s "$PGSYNC_SOURCE_URI" -t "$PGSYNC_TARGET_URI"
+    run --separate-stderr "$PGSYNC" -q --data-only --no-clean \
+        -s "$PGSYNC_SOURCE_URI" -t "$PGSYNC_TARGET_URI"
     [ "$status" -eq 0 ]
 
     [ "$(target_row_count)" = "1" ]
