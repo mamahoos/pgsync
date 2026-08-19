@@ -57,6 +57,14 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Update GitHub Action version tags
-        uses: peter-evans/action-update-version-tags@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          major="${version%%.*}"
+          minor="${version%.*}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f "v${major}"
+          git tag -f "v${minor}"
+          git push origin "refs/tags/v${major}" "refs/tags/v${minor}" --force
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
