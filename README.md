@@ -1,10 +1,16 @@
 # pgsync
 
-One-shot PostgreSQL logical sync: `pg_dump | psql`. rsync-shaped flags, sane defaults (`--no-owner`, `--no-privileges`, `ON_ERROR_STOP` on the target).
+**One-shot PostgreSQL logical sync** — copy one database to another with `pg_dump | psql` and opinionated defaults.
+
+CLI • Docker • GitHub Actions
+
+Not incremental replication, CDC, or bidirectional sync — always a full logical dump over the wire.
 
 ## Quick start
 
-**Script** — needs Bash 4+ and `pg_dump` / `psql` on `PATH`:
+### CLI
+
+Needs Bash 4+ and `pg_dump` / `psql` on `PATH`:
 
 ```bash
 ./pgsync.sh \
@@ -12,7 +18,7 @@ One-shot PostgreSQL logical sync: `pg_dump | psql`. rsync-shaped flags, sane def
   -t 'postgresql://user:pass@target:5432/dbname'
 ```
 
-**Docker** — no local Postgres client needed; image includes `pg_dump` and `psql`:
+### Docker
 
 ```bash
 docker run --rm ghcr.io/mamahoos/pgsync:latest \
@@ -20,35 +26,36 @@ docker run --rm ghcr.io/mamahoos/pgsync:latest \
   -t 'postgresql://user:pass@target:5432/dbname'
 ```
 
-Published on every version tag (`v*`) to [GHCR](https://github.com/mamahoos/pgsync/pkgs/container/pgsync). Pin a release, e.g. `ghcr.io/mamahoos/pgsync:2.0.1`.
+Images publish on version tags to [GHCR](https://github.com/mamahoos/pgsync/pkgs/container/pgsync). Pin a release, e.g. `ghcr.io/mamahoos/pgsync:2.1.0`.
 
-Log output goes to **stderr**; stdout stays free for the dump pipe.
+### GitHub Actions
+
+```yaml
+- uses: mamahoos/pgsync@v2
+  with:
+    source: ${{ secrets.PGSYNC_SOURCE_URI }}
+    target: ${{ secrets.PGSYNC_TARGET_URI }}
+```
+
+Prefer a pinned semver (`@v2.1.0`) or commit SHA for production. Do not use `@main`.
+
+Reference workflow: [`examples/github-action-sync.yml`](examples/github-action-sync.yml).
+
+Dry-run and verbose output **redact passwords** in connection URIs. Log messages go to **stderr**; stdout stays free for the dump pipe.
 
 ## Install
 
 ```bash
-sudo source ./install.sh          # system: /usr/local/bin/pgsync
-PREFIX="${HOME}/.local" ./install.sh   # user-local, no root
+sudo source ./install.sh               # /usr/local/bin/pgsync
+PREFIX="${HOME}/.local" ./install.sh   # user-local
 ```
 
-Bash tab completion is installed alongside the binary. Open a new shell or `source` the completion file the installer prints.
+Bash tab completion ships with the installer.
 
 ## Docker Compose (local demo)
 
-Two Postgres instances plus a one-shot sync — useful for smoke tests:
-
 ```bash
 docker compose run --rm pgsync
-```
-
-Custom URIs or a pre-built image:
-
-```bash
-docker compose run --rm pgsync \
-  -s 'postgresql://user:pass@host:5432/src' \
-  -t 'postgresql://user:pass@host:5432/dst'
-
-PGSYNC_IMAGE=ghcr.io/mamahoos/pgsync:latest docker compose run --rm pgsync
 ```
 
 ## Options
@@ -60,7 +67,7 @@ PGSYNC_IMAGE=ghcr.io/mamahoos/pgsync:latest docker compose run --rm pgsync
 | `-n`, `--dry-run` | Print the pipeline; do not run |
 | `--delete` | Drop and recreate `public` on target before restore |
 | `--schema-only` | Schema without data |
-| `--data-only` | Data only (target table must already exist; use `--no-clean`) |
+| `--data-only` | Data only (target table must exist; use `--no-clean`) |
 | `--no-clean` | Skip `pg_dump --clean --if-exists` |
 | `--single-transaction` | Wrap restore in one transaction (`psql -1`) |
 | `-q`, `--quiet` | Suppress the final `pgsync: ok` line |
@@ -68,9 +75,7 @@ PGSYNC_IMAGE=ghcr.io/mamahoos/pgsync:latest docker compose run --rm pgsync
 | `-h`, `--help` | Help |
 | `-V`, `--version` | Version |
 
-`--source=URI` and `--target=URI` are accepted. There is no incremental mode — always a full logical dump over the wire.
-
-Standard libpq env vars apply (`PGPASSWORD`, `PGSSLMODE`, …). Non-zero exit on bad args, missing tools, or `psql` errors.
+`--source=URI` and `--target=URI` are accepted. Standard libpq env vars apply (`PGPASSWORD`, `PGSSLMODE`, …).
 
 ## Tests
 

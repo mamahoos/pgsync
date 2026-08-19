@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: smoke
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -55,3 +55,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Update GitHub Action version tags
+        uses: peter-evans/action-update-version-tags@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

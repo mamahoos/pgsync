@@ -11,8 +11,9 @@ setup() {
     [[ "$stderr" == *"would run:"* ]]
     [[ "$stderr" == *"pg_dump --no-owner --no-privileges --clean --if-exists"* ]]
     [[ "$stderr" == *"psql -v ON_ERROR_STOP=1"* ]]
-    [[ "$stderr" == *"$SRC"* ]]
-    [[ "$stderr" == *"$DST"* ]]
+    [[ "$stderr" == *'user:\*\*\*@source:5432/app'* ]]
+    [[ "$stderr" == *'user:\*\*\*@target:5432/app'* ]]
+    [[ "$stderr" != *":pass@"* ]]
 }
 
 @test "dry-run with --delete mentions public schema reset" {
@@ -49,8 +50,8 @@ setup() {
     run --separate-stderr "$PGSYNC" -n \
         --source="$SRC" --target="$DST"
     [ "$status" -eq 0 ]
-    [[ "$stderr" == *"$SRC"* ]]
-    [[ "$stderr" == *"$DST"* ]]
+    [[ "$stderr" == *'user:\*\*\*@source:5432/app'* ]]
+    [[ "$stderr" == *'user:\*\*\*@target:5432/app'* ]]
 }
 
 @test "schema-only and data-only together exit 1" {
