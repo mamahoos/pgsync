@@ -9,7 +9,7 @@
 #
 set -euo pipefail
 
-VERSION="2.0.1"
+VERSION="2.1.0"
 
 QUIET=false
 VERBOSE=false
@@ -39,6 +39,16 @@ die() {
 vmsg() {
     $VERBOSE || return 0
     say "pgsync: $*"
+}
+
+# Hide credentials in logged URIs (dry-run / verbose pipeline).
+redact_uri() {
+    local uri="$1"
+    if [[ "$uri" =~ ^postgres(ql)?://[^:/@]+:[^@]+@ ]]; then
+        printf '%s' "$uri" | sed -E 's#^(postgres(ql)?://[^:/@]+):[^@]*@#\1:***@#'
+    else
+        printf '%s' "$uri"
+    fi
 }
 
 #############################################
@@ -116,10 +126,17 @@ PSQL+=("$DST")
 
 #############################################
 dry_show() {
+    local arg
     printf '  ' >&2
-    printf '%q ' "${PGDUMP[@]}" >&2
+    for arg in "${PGDUMP[@]}"; do
+        [[ "$arg" == "$SRC" ]] && arg="$(redact_uri "$SRC")"
+        printf '%q ' "$arg" >&2
+    done
     printf ' | ' >&2
-    printf '%q ' "${PSQL[@]}" >&2
+    for arg in "${PSQL[@]}"; do
+        [[ "$arg" == "$DST" ]] && arg="$(redact_uri "$DST")"
+        printf '%q ' "$arg" >&2
+    done
     printf '\n' >&2
 }
 

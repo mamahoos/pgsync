@@ -1,0 +1,77 @@
+name: pgsync
+description: One-shot PostgreSQL logical sync (pg_dump | psql) with sensible defaults.
+branding:
+  icon: database
+  color: blue
+
+inputs:
+  source:
+    description: Source PostgreSQL connection URI
+    required: true
+  target:
+    description: Target PostgreSQL connection URI
+    required: true
+  dry-run:
+    description: Print the pipeline without running pg_dump or psql
+    required: false
+    default: "false"
+  delete:
+    description: Drop and recreate the public schema on the target before restore
+    required: false
+    default: "false"
+  schema-only:
+    description: pg_dump --schema-only
+    required: false
+    default: "false"
+  data-only:
+    description: pg_dump --data-only
+    required: false
+    default: "false"
+  no-clean:
+    description: Omit pg_dump --clean --if-exists
+    required: false
+    default: "false"
+  single-transaction:
+    description: Wrap restore in one transaction (psql -1)
+    required: false
+    default: "false"
+  quiet:
+    description: Suppress the final pgsync ok line
+    required: false
+    default: "false"
+  verbose:
+    description: Show pipeline and psql output
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Ensure PostgreSQL client
+      shell: bash
+      run: |
+        if ! command -v pg_dump >/dev/null 2>&1 || ! command -v psql >/dev/null 2>&1; then
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+        fi
+
+    - name: Run pgsync
+      shell: bash
+      run: |
+        set -euo pipefail
+        args=(-s "${{ inputs.source }}" -t "${{ inputs.target }}")
+
+        is_true() {
+          [[ "${1,,}" == "true" ]]
+        }
+
+        is_true "${{ inputs.dry-run }}" && args+=(-n)
+        is_true "${{ inputs.delete }}" && args+=(--delete)
+        is_true "${{ inputs.schema-only }}" && args+=(--schema-only)
+        is_true "${{ inputs.data-only }}" && args+=(--data-only)
+        is_true "${{ inputs.no-clean }}" && args+=(--no-clean)
+        is_true "${{ inputs.single-transaction }}" && args+=(--single-transaction)
+        is_true "${{ inputs.quiet }}" && args+=(-q)
+        is_true "${{ inputs.verbose }}" && args+=(-v)
+
+        "${{ github.action_path }}/pgsync.sh" "${args[@]}"
