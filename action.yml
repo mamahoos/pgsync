@@ -1,4 +1,4 @@
-name: pgsync
+name: postgres-logical-sync
 description: One-shot PostgreSQL logical sync (pg_dump | psql) with sensible defaults.
 branding:
   icon: database

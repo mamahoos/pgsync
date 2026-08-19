@@ -6,7 +6,7 @@ setup() {
 @test "version prints semver on stderr" {
     run --separate-stderr "$PGSYNC" --version
     [ "$status" -eq 0 ]
-    [ "$stderr" = "pgsync 2.1.1" ]
+    [ "$stderr" = "pgsync 2.1.2" ]
     [ -z "$output" ]
 }
 

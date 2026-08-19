@@ -9,7 +9,7 @@
 #
 set -euo pipefail
 
-VERSION="2.1.1"
+VERSION="2.1.2"
 
 QUIET=false
 VERBOSE=false
